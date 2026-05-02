@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.paint.*?>
+<?import javafx.scene.shape.*?>
+<?import javafx.scene.text.*?>
+
+<AnchorPane fx:id="mainPanel" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="718.0" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="dev.atikdd.marksman.MarksmanController">
+   <children>
+      <Rectangle arcHeight="5.0" arcWidth="5.0" fill="#edff1f" height="335.0" layoutX="-3.0" layoutY="-1.0" stroke="BLACK" strokeType="INSIDE" width="60.0" />
+      <Rectangle arcHeight="5.0" arcWidth="5.0" fill="#d3d8dd" height="66.0" layoutX="-1.0" layoutY="334.0" stroke="BLACK" strokeType="INSIDE" width="561.0" />
+      <Rectangle arcHeight="5.0" arcWidth="5.0" fill="WHITE" height="408.0" layoutX="560.0" layoutY="-7.0" stroke="BLACK" strokeType="INSIDE" width="159.0" />
+      <Label layoutX="569.0" layoutY="14.0" prefHeight="31.0" prefWidth="136.0" text="Счет игрока:">
+         <font>
+            <Font name="System Bold" size="21.0" />
+         </font>
+      </Label>
+      <Label fx:id="score" layoutX="568.0" layoutY="45.0" prefHeight="31.0" prefWidth="104.0" text="0">
+         <font>
+            <Font size="21.0" />
+         </font>
+      </Label>
+      <Label layoutX="568.0" layoutY="88.0" prefHeight="31.0" prefWidth="142.0" text="Выстрелов:">
+         <font>
+            <Font name="System Bold" size="21.0" />
+         </font>
+      </Label>
+      <Label fx:id="shots" layoutX="568.0" layoutY="110.0" prefHeight="47.0" prefWidth="104.0" text="0">
+         <font>
+            <Font size="21.0" />
+         </font>
+      </Label>
+      <Button layoutX="27.0" layoutY="349.0" mnemonicParsing="false" onAction="#tStart" prefHeight="31.0" prefWidth="89.0" text="Начало игры" />
+      <Button layoutX="122.0" layoutY="349.0" mnemonicParsing="false" onAction="#tStop" prefHeight="31.0" prefWidth="112.0" text="Остановить игру" />
+      <Button layoutX="240.0" layoutY="349.0" mnemonicParsing="false" onAction="#tShoot" prefHeight="31.0" prefWidth="67.0" text="Выстрел" />
+      <Polyline fx:id="player" fill="#0086ff" layoutX="122.0" layoutY="187.0" points="-108.0, 19.0, -108.0, -42.0, -83.0, -10.0, -108.0, 19.0" strokeType="INSIDE" />
+      <Line fx:id="arrow" startX="39.0" startY="177.0" endX="69.0" endY="177.0" stroke="#8B4513" strokeWidth="2.0" visible="false" />
+      <Line fx:id="line2" endX="500.0" endY="334.0" startX="500.0" />
+      <Line fx:id="line1" endX="380.0" endY="334.0" startX="380.0" />
+      <Circle fx:id="target1" radius="27.0" stroke="BLACK" strokeType="INSIDE">
+         <fill>
+            <RadialGradient centerX="0.5" centerY="0.5" radius="0.5">
+               <stops>
+                  <Stop>
+                     <color>
+                        <Color red="1.0" green="0.11999999731779099" blue="0.25294965505599976" />
+                     </color>
+                  </Stop>
+                  <Stop offset="1.0">
+                     <color>
+                        <Color red="1.0" green="1.0" blue="1.0" />
+                     </color>
+                  </Stop>
+               </stops>
+            </RadialGradient>
+         </fill>
+      </Circle>
+      <Circle fx:id="target2" radius="16.0" stroke="BLACK" strokeType="INSIDE">
+         <fill>
+            <RadialGradient centerX="0.5" centerY="0.5" radius="0.5">
+               <stops>
+                  <Stop>
+                     <color>
+                        <Color red="1.0" green="0.11999999731779099" blue="0.11999999731779099" />
+                     </color>
+                  </Stop>
+                  <Stop offset="1.0">
+                     <color>
+                        <Color red="1.0" green="1.0" blue="1.0" />
+                     </color>
+                  </Stop>
+               </stops>
+            </RadialGradient>
+         </fill>
+      </Circle>
+      <Button layoutX="313.0" layoutY="349.0" mnemonicParsing="false" onAction="#tPause" prefHeight="31.0" prefWidth="60.0" text="Пауза" />
+      <Button layoutX="380.0" layoutY="349.0" mnemonicParsing="false" onAction="#tContinue" prefHeight="31.0" prefWidth="89.0" text="Продолжить" />
+   </children>
+</AnchorPane>
