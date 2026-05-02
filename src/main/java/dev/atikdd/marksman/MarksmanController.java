@@ -19,7 +19,7 @@ public class MarksmanController {
         boolean up;
         Line line;
         Point(Line line) {
-            this.up = ThreadLocalRandom.current().nextBoolean();;
+            this.up = ThreadLocalRandom.current().nextBoolean();
             this.line = line;
             this.x = line.getStartX();
             this.y = ThreadLocalRandom.current().nextDouble(line.getStartY(), line.getEndY()
@@ -45,9 +45,9 @@ public class MarksmanController {
     volatile private boolean isRun;
     volatile private boolean isPause;
     volatile private boolean arrowActive = false;
-    private AtomicReference<Double> arrowX = new AtomicReference<>(arrow_x);
-    private AtomicInteger scoreValue = new AtomicInteger(0);
-    private AtomicInteger shotsValue = new AtomicInteger(0);
+    private final AtomicReference<Double> arrowX = new AtomicReference<>(arrow_x);
+    private final AtomicInteger scoreValue = new AtomicInteger(0);
+    private final AtomicInteger shotsValue = new AtomicInteger(0);
 
     private Thread thread;
     private Thread arrowThread;
