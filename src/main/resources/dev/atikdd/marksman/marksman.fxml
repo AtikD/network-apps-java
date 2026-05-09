@@ -6,75 +6,102 @@
 <?import javafx.scene.shape.*?>
 <?import javafx.scene.text.*?>
 
-<AnchorPane fx:id="mainPanel" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="718.0" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="dev.atikdd.marksman.MarksmanController">
+<AnchorPane fx:id="mainPanel"
+            maxHeight="-Infinity" maxWidth="-Infinity"
+            minHeight="-Infinity" minWidth="-Infinity"
+            prefHeight="400.0" prefWidth="718.0"
+            xmlns="http://javafx.com/javafx/17.0.12"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="dev.atikdd.marksman.MarksmanController">
    <children>
-      <Rectangle arcHeight="5.0" arcWidth="5.0" fill="#edff1f" height="335.0" layoutX="-3.0" layoutY="-1.0" stroke="BLACK" strokeType="INSIDE" width="60.0" />
-      <Rectangle arcHeight="5.0" arcWidth="5.0" fill="#d3d8dd" height="66.0" layoutX="-1.0" layoutY="334.0" stroke="BLACK" strokeType="INSIDE" width="561.0" />
-      <Rectangle arcHeight="5.0" arcWidth="5.0" fill="WHITE" height="408.0" layoutX="560.0" layoutY="-7.0" stroke="BLACK" strokeType="INSIDE" width="159.0" />
-      <Label layoutX="569.0" layoutY="14.0" prefHeight="31.0" prefWidth="136.0" text="Счет игрока:">
-         <font>
-            <Font name="System Bold" size="21.0" />
-         </font>
+
+      <!-- Backgrounds -->
+      <Rectangle arcHeight="5.0" arcWidth="5.0" fill="#edff1f"
+                 height="335.0" layoutX="-3.0" layoutY="-1.0"
+                 stroke="BLACK" strokeType="INSIDE" width="60.0"/>
+      <Rectangle arcHeight="5.0" arcWidth="5.0" fill="#d3d8dd"
+                 height="66.0" layoutX="-1.0" layoutY="334.0"
+                 stroke="BLACK" strokeType="INSIDE" width="561.0"/>
+      <Rectangle arcHeight="5.0" arcWidth="5.0" fill="WHITE"
+                 height="408.0" layoutX="560.0" layoutY="-7.0"
+                 stroke="BLACK" strokeType="INSIDE" width="159.0"/>
+
+      <!-- Arrow lines: colour-coded per player slot -->
+      <Line fx:id="arrowLine0" startX="39.0" startY="80.0"  endX="69.0" endY="80.0"
+            stroke="#0086ff" strokeWidth="2.0" visible="false"/>
+      <Line fx:id="arrowLine1" startX="39.0" startY="140.0" endX="69.0" endY="140.0"
+            stroke="#ff4444" strokeWidth="2.0" visible="false"/>
+      <Line fx:id="arrowLine2" startX="39.0" startY="200.0" endX="69.0" endY="200.0"
+            stroke="#44bb00" strokeWidth="2.0" visible="false"/>
+      <Line fx:id="arrowLine3" startX="39.0" startY="260.0" endX="69.0" endY="260.0"
+            stroke="#ff8800" strokeWidth="2.0" visible="false"/>
+
+
+      <!-- ── Score panel ─────────────────────────────── -->
+      <Label layoutX="568.0" layoutY="10.0" text="Состояние:">
+         <font><Font name="System Bold" size="14.0"/></font>
       </Label>
-      <Label fx:id="score" layoutX="568.0" layoutY="45.0" prefHeight="31.0" prefWidth="104.0" text="0">
-         <font>
-            <Font size="21.0" />
-         </font>
+      <Label fx:id="lblState" layoutX="568.0" layoutY="29.0" prefWidth="140.0" text="Ожидание">
+         <font><Font size="13.0"/></font>
       </Label>
-      <Label layoutX="568.0" layoutY="88.0" prefHeight="31.0" prefWidth="142.0" text="Выстрелов:">
-         <font>
-            <Font name="System Bold" size="21.0" />
-         </font>
+
+      <Label layoutX="568.0" layoutY="57.0" text="Игроки:">
+         <font><Font name="System Bold" size="13.0"/></font>
       </Label>
-      <Label fx:id="shots" layoutX="568.0" layoutY="110.0" prefHeight="47.0" prefWidth="104.0" text="0">
-         <font>
-            <Font size="21.0" />
-         </font>
-      </Label>
-      <Button layoutX="27.0" layoutY="349.0" mnemonicParsing="false" onAction="#tStart" prefHeight="31.0" prefWidth="89.0" text="Начало игры" />
-      <Button layoutX="122.0" layoutY="349.0" mnemonicParsing="false" onAction="#tStop" prefHeight="31.0" prefWidth="112.0" text="Остановить игру" />
-      <Button layoutX="240.0" layoutY="349.0" mnemonicParsing="false" onAction="#tShoot" prefHeight="31.0" prefWidth="67.0" text="Выстрел" />
-      <Polyline fx:id="player" fill="#0086ff" layoutX="122.0" layoutY="187.0" points="-108.0, 19.0, -108.0, -42.0, -83.0, -10.0, -108.0, 19.0" strokeType="INSIDE" />
-      <Line fx:id="arrow" startX="39.0" startY="177.0" endX="69.0" endY="177.0" stroke="#8B4513" strokeWidth="2.0" visible="false" />
-      <Line fx:id="line2" endX="500.0" endY="334.0" startX="500.0" />
-      <Line fx:id="line1" endX="380.0" endY="334.0" startX="380.0" />
-      <Circle fx:id="target1" radius="27.0" stroke="BLACK" strokeType="INSIDE">
-         <fill>
-            <RadialGradient centerX="0.5" centerY="0.5" radius="0.5">
-               <stops>
-                  <Stop>
-                     <color>
-                        <Color red="1.0" green="0.11999999731779099" blue="0.25294965505599976" />
-                     </color>
-                  </Stop>
-                  <Stop offset="1.0">
-                     <color>
-                        <Color red="1.0" green="1.0" blue="1.0" />
-                     </color>
-                  </Stop>
-               </stops>
-            </RadialGradient>
-         </fill>
-      </Circle>
-      <Circle fx:id="target2" radius="16.0" stroke="BLACK" strokeType="INSIDE">
-         <fill>
-            <RadialGradient centerX="0.5" centerY="0.5" radius="0.5">
-               <stops>
-                  <Stop>
-                     <color>
-                        <Color red="1.0" green="0.11999999731779099" blue="0.11999999731779099" />
-                     </color>
-                  </Stop>
-                  <Stop offset="1.0">
-                     <color>
-                        <Color red="1.0" green="1.0" blue="1.0" />
-                     </color>
-                  </Stop>
-               </stops>
-            </RadialGradient>
-         </fill>
-      </Circle>
-      <Button layoutX="313.0" layoutY="349.0" mnemonicParsing="false" onAction="#tPause" prefHeight="31.0" prefWidth="60.0" text="Пауза" />
-      <Button layoutX="380.0" layoutY="349.0" mnemonicParsing="false" onAction="#tContinue" prefHeight="31.0" prefWidth="89.0" text="Продолжить" />
+
+      <!-- Column headers -->
+      <Label layoutX="568.0" layoutY="74.0" text="Имя"  textFill="GRAY"><font><Font size="10.0"/></font></Label>
+      <Label layoutX="646.0" layoutY="74.0" text="Оч"   textFill="GRAY"><font><Font size="10.0"/></font></Label>
+      <Label layoutX="670.0" layoutY="74.0" text="Вст"  textFill="GRAY"><font><Font size="10.0"/></font></Label>
+
+      <!-- Slot 0 -->
+      <Label fx:id="p0name"  layoutX="568.0" layoutY="88.0"  prefWidth="75.0" text="—"><font><Font size="12.0"/></font></Label>
+      <Label fx:id="p0score" layoutX="646.0" layoutY="88.0"  prefWidth="22.0" text="—"><font><Font size="12.0"/></font></Label>
+      <Label fx:id="p0shots" layoutX="670.0" layoutY="88.0"  prefWidth="22.0" text="—"><font><Font size="12.0"/></font></Label>
+
+      <!-- Slot 1 -->
+      <Label fx:id="p1name"  layoutX="568.0" layoutY="106.0" prefWidth="75.0" text="—"><font><Font size="12.0"/></font></Label>
+      <Label fx:id="p1score" layoutX="646.0" layoutY="106.0" prefWidth="22.0" text="—"><font><Font size="12.0"/></font></Label>
+      <Label fx:id="p1shots" layoutX="670.0" layoutY="106.0" prefWidth="22.0" text="—"><font><Font size="12.0"/></font></Label>
+
+      <!-- Slot 2 -->
+      <Label fx:id="p2name"  layoutX="568.0" layoutY="124.0" prefWidth="75.0" text="—"><font><Font size="12.0"/></font></Label>
+      <Label fx:id="p2score" layoutX="646.0" layoutY="124.0" prefWidth="22.0" text="—"><font><Font size="12.0"/></font></Label>
+      <Label fx:id="p2shots" layoutX="670.0" layoutY="124.0" prefWidth="22.0" text="—"><font><Font size="12.0"/></font></Label>
+
+      <!-- Slot 3 -->
+      <Label fx:id="p3name"  layoutX="568.0" layoutY="142.0" prefWidth="75.0" text="—"><font><Font size="12.0"/></font></Label>
+      <Label fx:id="p3score" layoutX="646.0" layoutY="142.0" prefWidth="22.0" text="—"><font><Font size="12.0"/></font></Label>
+      <Label fx:id="p3shots" layoutX="670.0" layoutY="142.0" prefWidth="22.0" text="—"><font><Font size="12.0"/></font></Label>
+
+      <!-- ── Game buttons ─────────────────────────────── -->
+      <Button fx:id="btnReady" layoutX="27.0"  layoutY="349.0" prefHeight="31.0" prefWidth="80.0"
+              text="Готов"   onAction="#onReady"  disable="true"/>
+      <Button fx:id="btnShoot" layoutX="120.0" layoutY="349.0" prefHeight="31.0" prefWidth="80.0"
+              text="Выстрел" onAction="#onShoot"  disable="true"/>
+      <Button fx:id="btnPause" layoutX="213.0" layoutY="349.0" prefHeight="31.0" prefWidth="80.0"
+              text="Пауза"   onAction="#onPause"  disable="true"/>
+
+      <!-- ── Login overlay ───────────────────────────── -->
+      <AnchorPane fx:id="loginPanel"
+                  layoutX="129.0" layoutY="90.0"
+                  prefWidth="310.0" prefHeight="175.0"
+                  style="-fx-background-color: white; -fx-border-color: #aaaaaa; -fx-border-width: 1;">
+         <children>
+            <Label layoutX="55.0" layoutY="15.0" text="Marksman Online">
+               <font><Font name="System Bold" size="18.0"/></font>
+            </Label>
+            <Label layoutX="20.0" layoutY="59.0" text="Имя:">
+               <font><Font size="13.0"/></font>
+            </Label>
+            <TextField fx:id="tfUsername" layoutX="80.0" layoutY="54.0"
+                       prefWidth="200.0" promptText="Ваше имя"/>
+            <Button layoutX="95.0" layoutY="95.0" prefWidth="120.0" prefHeight="31.0"
+                    text="Подключиться" onAction="#onConnect"/>
+            <Label fx:id="lblLoginStatus" layoutX="20.0" layoutY="138.0"
+                   prefWidth="270.0" textFill="RED" text=""/>
+         </children>
+      </AnchorPane>
+
    </children>
 </AnchorPane>

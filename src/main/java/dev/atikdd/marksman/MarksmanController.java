@@ -1,216 +1,216 @@
 package dev.atikdd.marksman;
 
+import dev.atikdd.marksman.net.*;
 import javafx.animation.AnimationTimer;
+import javafx.application.Platform;
 import javafx.fxml.FXML;
-import javafx.scene.control.Label;
+import javafx.scene.control.*;
 import javafx.scene.layout.AnchorPane;
+import javafx.scene.paint.Color;
+import javafx.scene.paint.CycleMethod;
+import javafx.scene.paint.RadialGradient;
+import javafx.scene.paint.Stop;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Line;
+import javafx.scene.shape.Polyline;
+import javafx.scene.shape.StrokeType;
 
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.ThreadLocalRandom;
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 
 public class MarksmanController {
 
-    private static class Point {
-        double x;
-        double y;
-        boolean up;
-        Line line;
-        Point(Line line) {
-            this.up = ThreadLocalRandom.current().nextBoolean();
-            this.line = line;
-            this.x = line.getStartX();
-            this.y = ThreadLocalRandom.current().nextDouble(line.getStartY(), line.getEndY()
-            );
-        }
-    }
-
     @FXML AnchorPane mainPanel;
-    @FXML Circle target1;
-    @FXML Circle target2;
-    @FXML Line line1;
-    @FXML Line line2;
-    @FXML Line arrow;
-    @FXML Label score;
-    @FXML Label shots;
+    @FXML AnchorPane loginPanel;
+    @FXML TextField   tfUsername;
+    @FXML Label       lblLoginStatus;
 
-    private static final double arrow_x = 39;
-    private static final double arrow_y = 177;
-    private static final double arrow_length = 30;
-    private static final double target1_radius = 27;
-    private static final double target2_radius = 16;
+    private Circle   target1;
+    private Circle   target2;
+    private Polyline[] playerShapes;
+    @FXML Line   arrowLine0, arrowLine1, arrowLine2, arrowLine3;
 
-    volatile private boolean isRun;
-    volatile private boolean isPause;
-    volatile private boolean arrowActive = false;
-    private final AtomicReference<Double> arrowX = new AtomicReference<>(arrow_x);
-    private final AtomicInteger scoreValue = new AtomicInteger(0);
-    private final AtomicInteger shotsValue = new AtomicInteger(0);
+    @FXML Label lblState;
+    @FXML Label p0name, p0score, p0shots;
+    @FXML Label p1name, p1score, p1shots;
+    @FXML Label p2name, p2score, p2shots;
+    @FXML Label p3name, p3score, p3shots;
 
-    private Thread thread;
-    private Thread arrowThread;
-    private AtomicReference<Point> target1_p;
-    private AtomicReference<Point> target2_p;
+    @FXML Button btnReady;
+    @FXML Button btnShoot;
+    @FXML Button btnPause;
+
+    private static final Color[] COLORS = {
+        Color.web("#0086ff"), Color.web("#ff4444"),
+        Color.web("#44bb00"), Color.web("#ff8800")
+    };
+
+    private GameClient  client;
+    private String      myName;
+    private volatile GameSnapshot currentSnapshot;
+
+    private Line[]    arrows;
+    private Label[][] playerLabels;
 
     @FXML
     public void initialize() {
-        target1_p = new AtomicReference<>(new Point(line1));
-        target2_p = new AtomicReference<>(new Point(line2));
+        target1 = createTarget(27, "#ff1f40");
+        target1.setLayoutX(380);
+        target1.setLayoutY(100);
+
+        target2 = createTarget(16, "#ff1f1f");
+        target2.setLayoutX(500);
+        target2.setLayoutY(200);
+
+        playerShapes = new Polyline[4];
+        for (int i = 0; i < 4; i++) {
+            Polyline shape = new Polyline(-108, 19, -108, -42, -83, -10, -108, 19);
+            shape.setFill(COLORS[i]);
+            shape.setLayoutX(122);
+            shape.setLayoutY(187);
+            shape.setStrokeType(StrokeType.INSIDE);
+            shape.setVisible(false);
+            playerShapes[i] = shape;
+        }
+
+        int loginIdx = mainPanel.getChildren().indexOf(loginPanel);
+        for (int i = 0; i < 4; i++) {
+            mainPanel.getChildren().add(loginIdx + i, playerShapes[i]);
+        }
+        mainPanel.getChildren().add(loginIdx + 4, target1);
+        mainPanel.getChildren().add(loginIdx + 5, target2);
+
+        arrows = new Line[]{arrowLine0, arrowLine1, arrowLine2, arrowLine3};
+        playerLabels = new Label[][]{
+            {p0name, p0score, p0shots},
+            {p1name, p1score, p1shots},
+            {p2name, p2score, p2shots},
+            {p3name, p3score, p3shots}
+        };
+
         AnimationTimer render = new AnimationTimer() {
             @Override
             public void handle(long now) {
-                Point p1 = target1_p.get();
-                target1.setLayoutX(p1.x);
-                target1.setLayoutY(p1.y);
-
-                Point p2 = target2_p.get();
-                target2.setLayoutX(p2.x);
-                target2.setLayoutY(p2.y);
-
-                if (arrowActive) {
-                    arrow.setVisible(true);
-                    arrow.setStartX(arrowX.get());
-                    arrow.setEndX(arrowX.get() + arrow_length);
-                } else {
-                    arrow.setVisible(false);
-                }
-
-                score.setText(String.valueOf(scoreValue.get()));
-                shots.setText(String.valueOf(shotsValue.get()));
+                GameSnapshot snap = currentSnapshot;
+                if (snap == null) return;
+                renderSnapshot(snap);
             }
         };
         render.start();
     }
 
-    private void move(AtomicReference<Point> target2P) {
-        target2P.getAndUpdate(point_t ->
-        {
-            double ty = point_t.y;
-            if (point_t.up) ty += 1;
-            else ty-=1;
-            if (ty < point_t.line.getStartY() || ty > point_t.line.getEndY()) point_t.up = !point_t.up;
-            point_t.y = ty;
-            return point_t;
-        });
-    }
+    private void renderSnapshot(GameSnapshot snap) {
+        target1.setLayoutY(snap.t1y);
+        target2.setLayoutY(snap.t2y);
 
-
-    @FXML
-    void tStart() {
-        if (thread != null) return;
-        scoreValue.set(0);
-        shotsValue.set(0);
-        thread = new Thread(() -> {
-            isRun = true;
-            isPause = false;
-            while (isRun) {
-                move(target1_p);
-                move(target2_p);
-                synchronized (thread)
-                {
-                    if (isPause)
-                    {
-                        try {
-                            thread.wait();
-                        } catch (InterruptedException e) {
-                            return;
-                        }
-                        isPause = false;
-                    }
-                }
-
-                try {
-                    Thread.sleep(10);
-                } catch (InterruptedException e) {
-                    return;
-                }
+        for (Polyline shape : playerShapes) shape.setVisible(false);
+        if (snap.players != null) {
+            for (int i = 0; i < snap.players.size() && i < 4; i++) {
+                PlayerInfo p = snap.players.get(i);
+                playerShapes[i].setLayoutY(p.y + 10);
+                playerShapes[i].setVisible(true);
             }
+        }
+
+        for (Line line : arrows) line.setVisible(false);
+        if (snap.arrows != null) {
+            for (ArrowInfo a : snap.arrows) {
+                int idx = playerIndex(snap, a.playerName);
+                if (idx < 0 || idx >= arrows.length) continue;
+                Line line = arrows[idx];
+                line.setStartX(a.x);
+                line.setEndX(a.x + 30);
+                line.setStartY(a.y);
+                line.setEndY(a.y);
+                line.setVisible(true);
+            }
+        }
+
+        lblState.setText(switch (snap.state) {
+            case "WAITING"  -> "Ожидание";
+            case "PLAYING"  -> "Игра идёт";
+            case "PAUSED"   -> "Пауза";
+            case "FINISHED" -> snap.winner != null ? "Победитель:\n" + snap.winner : "Завершено";
+            default         -> snap.state;
         });
-        thread.start();
+
+        for (Label[] row : playerLabels) {
+            row[0].setText("—"); row[0].setTextFill(Color.LIGHTGRAY);
+            row[1].setText("—");
+            row[2].setText("—");
+        }
+        if (snap.players != null) {
+            for (int i = 0; i < snap.players.size() && i < 4; i++) {
+                PlayerInfo p = snap.players.get(i);
+                playerLabels[i][0].setText(p.ready ? p.name + " ✓" : p.name);
+                playerLabels[i][0].setTextFill(COLORS[i]);
+                playerLabels[i][1].setText(String.valueOf(p.score));
+                playerLabels[i][2].setText(String.valueOf(p.shots));
+            }
+        }
+
+        boolean playing      = "PLAYING".equals(snap.state);
+        boolean myArrowFlying = snap.arrows != null &&
+            snap.arrows.stream().anyMatch(a -> myName != null && myName.equals(a.playerName));
+
+        btnReady.setDisable(playing);
+        btnShoot.setDisable(!playing || myArrowFlying);
+        btnPause.setDisable(!playing);
+    }
+
+    private int playerIndex(GameSnapshot snap, String name) {
+        if (snap.players == null || name == null) return -1;
+        for (int i = 0; i < snap.players.size(); i++) {
+            if (name.equals(snap.players.get(i).name)) return i;
+        }
+        return -1;
     }
 
     @FXML
-    void tStop() {
-        if (!isRun) return;
-        isRun = false;
-        thread.interrupt();
-        thread = null;
-        if (arrowThread != null) {
-            arrowActive = false;
-            arrowThread.interrupt();
-            arrowThread = null;
+    void onConnect() {
+        String username = tfUsername.getText().trim();
+        InetAddress host     = null;
+        try {
+            host = InetAddress.getLocalHost();
+        } catch (UnknownHostException e) {
+            throw new RuntimeException(e);
+        }
+        if (username.isEmpty()) { lblLoginStatus.setText("Введите имя"); return; }
+
+        try {
+            client = new GameClient(host, 3124);
+            client.onSnapshot   = snap  -> currentSnapshot = snap;
+            client.onError      = error -> Platform.runLater(() -> {
+                lblLoginStatus.setText(error);
+                client = null;
+                loginPanel.setVisible(true);
+            });
+            client.onDisconnect = ()    -> Platform.runLater(() -> {
+                lblLoginStatus.setText("Соединение потеряно");
+                loginPanel.setVisible(true);
+                currentSnapshot = null;
+            });
+
+            myName = username;
+            client.send(Msg.join(username));
+            loginPanel.setVisible(false);
+        } catch (IOException e) {
+            lblLoginStatus.setText("Ошибка: " + e.getMessage());
         }
     }
 
-    @FXML
-    void tPause() {
-        isPause = true;
+    private Circle createTarget(double radius, String color) {
+        Circle c = new Circle(radius);
+        c.setStroke(Color.BLACK);
+        c.setStrokeType(StrokeType.INSIDE);
+        c.setFill(new RadialGradient(0, 0, 0.5, 0.5, 0.5, true, CycleMethod.NO_CYCLE,
+            new Stop(0, Color.web(color)),
+            new Stop(1, Color.WHITE)));
+        return c;
     }
 
-    @FXML
-    void tContinue(){
-        if (thread == null) return;
-        synchronized (thread){
-            thread.notifyAll();
-        }
-    }
-
-    @FXML
-    void tShoot() {
-        if (!isRun || arrowActive) return;
-        arrowActive = true;
-        arrowX.set(arrow_x);
-        shotsValue.incrementAndGet();
-        arrowThread = new Thread(() -> {
-            while (arrowActive) {
-                arrowX.updateAndGet(x -> x + 3);
-
-                if (arrowX.get() + arrow_length > 560) {
-                    arrowActive = false;
-                    break;
-                }
-
-                double tipX = arrowX.get() + arrow_length;
-
-                Point p1 = target1_p.get();
-                double dx1 = tipX - p1.x;
-                double dy1 = arrow_y - p1.y;
-                if (Math.sqrt(dx1 * dx1 + dy1 * dy1) < target1_radius) {
-                    arrowActive = false;
-                    scoreValue.incrementAndGet();
-                    break;
-                }
-
-                Point p2 = target2_p.get();
-                double dx2 = tipX - p2.x;
-                double dy2 = arrow_y - p2.y;
-                if (Math.sqrt(dx2 * dx2 + dy2 * dy2) < target2_radius) {
-                    arrowActive = false;
-                    scoreValue.addAndGet(2);
-                    break;
-                }
-
-                synchronized (thread) {
-                    if (isPause) {
-                        try {
-                            thread.wait();
-                        } catch (InterruptedException e) {
-                            return;
-                        }
-                    }
-                }
-
-                try {
-                    Thread.sleep(10);
-                } catch (InterruptedException e) {
-                    return;
-                }
-            }
-            arrowActive = false;
-            arrowThread = null;
-        });
-        arrowThread.start();
-    }
+    @FXML void onReady() { if (client != null) client.send(Msg.ready()); }
+    @FXML void onShoot() { if (client != null) client.send(Msg.shoot()); }
+    @FXML void onPause() { if (client != null) client.send(Msg.pause()); }
 }
