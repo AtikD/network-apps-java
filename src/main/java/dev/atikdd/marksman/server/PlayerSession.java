@@ -11,14 +11,13 @@ class PlayerSession {
     int score;
     int shots;
     boolean ready;
-    boolean paused;
     int index;
 
     double playerY = 167;
 
-    volatile double arrowX;
-    volatile boolean arrowActive;
-    Thread arrowThread;
+    double arrowX;
+    double arrowY;
+    boolean arrowActive;
 
     private final Socket socket;
     private final DataOutputStream dos;
@@ -27,10 +26,10 @@ class PlayerSession {
     private final Gson gson = new Gson();
     private Thread readThread;
 
-    PlayerSession(Socket socket, GameServer server, int index) throws IOException {
+    PlayerSession(Socket socket, GameServer server) throws IOException {
         this.socket = socket;
         this.server = server;
-        this.index = index;
+        this.index = -1;
         this.dos = new DataOutputStream(socket.getOutputStream());
         this.dis = new DataInputStream(socket.getInputStream());
         readThread = new Thread(this::readLoop);
@@ -64,7 +63,6 @@ class PlayerSession {
     void close() {
         try { socket.close(); } catch (IOException ignored) {}
         arrowActive = false;
-        if (arrowThread != null) arrowThread.interrupt();
         if (readThread != null) readThread.interrupt();
     }
 }
