@@ -1,6 +1,8 @@
 package dev.atikdd.marksman.server;
 
 import dev.atikdd.marksman.net.*;
+import org.hibernate.Session;
+import org.hibernate.Transaction;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -24,6 +26,8 @@ public class GameServer {
     volatile String winner = null;
 
     public void start() {
+        HibernateUtil.getSessionFactory();
+
         Thread tickThread = new Thread(() -> {
             while (!Thread.currentThread().isInterrupted()) {
                 tick();
@@ -52,6 +56,8 @@ public class GameServer {
             }
         } catch (IOException e) {
             System.err.println("Сервер упал: " + e.getMessage());
+        } finally {
+            HibernateUtil.shutdown();
         }
     }
 
@@ -101,11 +107,12 @@ public class GameServer {
     synchronized void onMessage(PlayerSession session, Msg msg) {
         if (msg.type != TypeMsg.JOIN && session.name == null) return;
         switch (msg.type) {
-            case JOIN  -> handleJoin(session, msg.username);
-            case READY -> handleReady(session);
-            case SHOOT -> handleShoot(session);
-            case PAUSE -> handlePause(session);
-            case SNAPSHOT, ERROR -> {}
+            case JOIN              -> handleJoin(session, msg.username);
+            case READY             -> handleReady(session);
+            case SHOOT             -> handleShoot(session);
+            case PAUSE             -> handlePause(session);
+            case LEADERBOARD_REQUEST -> handleLeaderboard(session);
+            case SNAPSHOT, ERROR, LEADERBOARD_RESPONSE -> {}
         }
     }
 
@@ -133,6 +140,7 @@ public class GameServer {
         pendingSessions.remove(session);
         sessions.add(session);
         recalcSpawnPositions();
+        ensurePlayerInDb(username);
         System.out.println("Игрок: " + username);
         broadcast(buildSnapshot());
     }
@@ -168,6 +176,15 @@ public class GameServer {
         broadcast(buildSnapshot());
     }
 
+    private void handleLeaderboard(PlayerSession session) {
+        if (state == GameState.PLAYING) {
+            state = GameState.PAUSED;
+            for (PlayerSession s : sessions) s.ready = false;
+            broadcast(buildSnapshot());
+        }
+        session.send(Msg.leaderboardResponse(getLeaderboard()));
+    }
+
     private void checkWin(PlayerSession session) {
         if (session.score >= WIN_SCORE) {
             winner = session.name;
@@ -176,6 +193,7 @@ public class GameServer {
                 s.ready = false;
                 s.arrowActive = false;
             }
+            incrementWins(session.name);
         }
     }
 
@@ -255,5 +273,42 @@ public class GameServer {
             if (!used[i]) return i;
         }
         throw new IllegalStateException("Нет свободных слотов");
+    }
+
+    private void ensurePlayerInDb(String username) {
+        try (Session hibSession = HibernateUtil.getSessionFactory().openSession()) {
+            Transaction tx = hibSession.beginTransaction();
+            if (hibSession.find(PlayerEntity.class, username) == null) {
+                hibSession.persist(new PlayerEntity(username));
+            }
+            tx.commit();
+        } catch (Exception e) {
+            System.err.println("DB error: " + e.getMessage());
+        }
+    }
+
+    private void incrementWins(String username) {
+        try (Session hibSession = HibernateUtil.getSessionFactory().openSession()) {
+            Transaction tx = hibSession.beginTransaction();
+            PlayerEntity player = hibSession.find(PlayerEntity.class, username);
+            player.setWins(player.getWins() + 1);
+            tx.commit();
+        } catch (Exception e) {
+            System.err.println("DB error: " + e.getMessage());
+        }
+    }
+
+    private List<LeaderboardEntry> getLeaderboard() {
+        try (Session hibSession = HibernateUtil.getSessionFactory().openSession()) {
+            return hibSession
+                .createQuery("FROM PlayerEntity ORDER BY wins DESC", PlayerEntity.class)
+                .getResultList()
+                .stream()
+                .map(p -> new LeaderboardEntry(p.getUsername(), p.getWins()))
+                .toList();
+        } catch (Exception e) {
+            System.err.println("DB error: " + e.getMessage());
+            return List.of();
+        }
     }
 }

@@ -81,6 +81,8 @@
               text="Выстрел" onAction="#onShoot"  disable="true"/>
       <Button fx:id="btnPause" layoutX="213.0" layoutY="349.0" prefHeight="31.0" prefWidth="80.0"
               text="Пауза"   onAction="#onPause"  disable="true"/>
+      <Button fx:id="btnLeaderboard" layoutX="306.0" layoutY="349.0" prefHeight="31.0" prefWidth="115.0"
+              text="Лидеры" onAction="#onLeaderboard" disable="true"/>
 
       <!-- ── Login overlay ───────────────────────────── -->
       <AnchorPane fx:id="loginPanel"

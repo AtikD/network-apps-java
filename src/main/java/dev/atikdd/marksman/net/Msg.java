@@ -1,10 +1,13 @@
 package dev.atikdd.marksman.net;
 
+import java.util.List;
+
 public class Msg {
     public TypeMsg type;
     public String username;
     public GameSnapshot snapshot;
     public String error;
+    public List<LeaderboardEntry> leaderboard;
 
     public Msg() {}
 
@@ -29,6 +32,16 @@ public class Msg {
     public static Msg error(String error) {
         Msg m = new Msg(TypeMsg.ERROR);
         m.error = error;
+        return m;
+    }
+
+    public static Msg leaderboardRequest() {
+        return new Msg(TypeMsg.LEADERBOARD_REQUEST);
+    }
+
+    public static Msg leaderboardResponse(List<LeaderboardEntry> entries) {
+        Msg m = new Msg(TypeMsg.LEADERBOARD_RESPONSE);
+        m.leaderboard = entries;
         return m;
     }
 }

@@ -3,20 +3,21 @@ package dev.atikdd.marksman;
 import dev.atikdd.marksman.net.GameConstants;
 import dev.atikdd.marksman.net.GameSnapshot;
 import dev.atikdd.marksman.net.GameState;
+import dev.atikdd.marksman.net.LeaderboardEntry;
 import dev.atikdd.marksman.net.Msg;
 import javafx.animation.AnimationTimer;
 import javafx.application.Platform;
+import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleStringProperty;
 import javafx.fxml.FXML;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.shape.Line;
 
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.List;
 
 public class MarksmanController {
 
@@ -36,6 +37,7 @@ public class MarksmanController {
     @FXML Button btnReady;
     @FXML Button btnShoot;
     @FXML Button btnPause;
+    @FXML Button btnLeaderboard;
 
     private GameRenderer renderer;
     private GameClient   client;
@@ -88,13 +90,15 @@ public class MarksmanController {
             return;
         }
 
-        client.onSnapshot   = this::onSnapshot;
-        client.onError      = this::onServerError;
-        client.onDisconnect = this::onDisconnect;
+        client.onSnapshot    = this::onSnapshot;
+        client.onError       = this::onServerError;
+        client.onDisconnect  = this::onDisconnect;
+        client.onLeaderboard = this::onLeaderboardResponse;
 
         renderer.setMyName(username);
         client.send(Msg.join(username));
         loginPanel.setVisible(false);
+        btnLeaderboard.setDisable(false);
     }
 
     private void onSnapshot(GameSnapshot snap) {
@@ -119,6 +123,7 @@ public class MarksmanController {
         Platform.runLater(() -> {
             lblLoginStatus.setText(error);
             client = null;
+            btnLeaderboard.setDisable(true);
             loginPanel.setVisible(true);
         });
     }
@@ -127,12 +132,43 @@ public class MarksmanController {
         Platform.runLater(() -> {
             if (client == null) return;
             lblLoginStatus.setText("Соединение потеряно");
+            btnLeaderboard.setDisable(true);
             loginPanel.setVisible(true);
             currentSnapshot = null;
         });
     }
 
-    @FXML void onReady() { if (client != null) client.send(Msg.ready()); }
-    @FXML void onShoot() { if (client != null) client.send(Msg.shoot()); }
-    @FXML void onPause() { if (client != null) client.send(Msg.pause()); }
+    private void onLeaderboardResponse(List<LeaderboardEntry> entries) {
+        Platform.runLater(() -> showLeaderboard(entries));
+    }
+
+    private void showLeaderboard(List<LeaderboardEntry> entries) {
+        TableView<LeaderboardEntry> table = new TableView<>();
+
+        TableColumn<LeaderboardEntry, String> nameCol = new TableColumn<>("Игрок");
+        nameCol.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().name));
+        nameCol.setPrefWidth(180);
+
+        TableColumn<LeaderboardEntry, Integer> winsCol = new TableColumn<>("Победы");
+        winsCol.setCellValueFactory(c -> new SimpleIntegerProperty(c.getValue().wins).asObject());
+        winsCol.setPrefWidth(80);
+
+        table.getColumns().add(nameCol);
+        table.getColumns().add(winsCol);
+        if (entries != null) table.getItems().addAll(entries);
+        table.setPrefHeight(250);
+        table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
+
+        Dialog<Void> dialog = new Dialog<>();
+        dialog.setTitle("Таблица лидеров");
+        dialog.setHeaderText(null);
+        dialog.getDialogPane().setContent(table);
+        dialog.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
+        dialog.show();
+    }
+
+    @FXML void onReady()       { if (client != null) client.send(Msg.ready()); }
+    @FXML void onShoot()       { if (client != null) client.send(Msg.shoot()); }
+    @FXML void onPause()       { if (client != null) client.send(Msg.pause()); }
+    @FXML void onLeaderboard() { if (client != null) client.send(Msg.leaderboardRequest()); }
 }
