@@ -19,6 +19,7 @@ public class GameServer {
 
     final List<PlayerSession> sessions = new CopyOnWriteArrayList<>();
     final List<PlayerSession> pendingSessions = new CopyOnWriteArrayList<>();
+    final List<PlayerSession> observers = new CopyOnWriteArrayList<>();
 
     volatile GameState state = GameState.WAITING;
     volatile double t1y = TARGET1_START_Y, t2y = TARGET2_START_Y;
@@ -42,7 +43,7 @@ public class GameServer {
         tickThread.setDaemon(true);
         tickThread.start();
 
-        try (ServerSocket ss = new ServerSocket(PORT, 0, InetAddress.getLocalHost())) {
+        try (ServerSocket ss = new ServerSocket(PORT, 0, InetAddress.getLoopbackAddress())) {
             System.out.println("Сервер запущен на порту " + PORT);
             while (true) {
                 Socket cs = ss.accept();
@@ -105,6 +106,14 @@ public class GameServer {
     }
 
     synchronized void onMessage(PlayerSession session, Msg msg) {
+        if (msg.type == TypeMsg.OBSERVE) {
+            handleObserve(session);
+            return;
+        }
+        if (session.observer) {
+            if (msg.type == TypeMsg.LEADERBOARD_REQUEST) handleLeaderboard(session);
+            return;
+        }
         if (msg.type != TypeMsg.JOIN && session.name == null) return;
         switch (msg.type) {
             case JOIN              -> handleJoin(session, msg.username);
@@ -112,8 +121,16 @@ public class GameServer {
             case SHOOT             -> handleShoot(session);
             case PAUSE             -> handlePause(session);
             case LEADERBOARD_REQUEST -> handleLeaderboard(session);
-            case SNAPSHOT, ERROR, LEADERBOARD_RESPONSE -> {}
+            case SNAPSHOT, ERROR, LEADERBOARD_RESPONSE, OBSERVE -> {}
         }
+    }
+
+    private void handleObserve(PlayerSession session) {
+        if (session.observer || session.name != null) return;
+        session.observer = true;
+        pendingSessions.remove(session);
+        observers.add(session);
+        session.send(buildSnapshot());
     }
 
     private void handleJoin(PlayerSession session, String username) {
@@ -177,7 +194,7 @@ public class GameServer {
     }
 
     private void handleLeaderboard(PlayerSession session) {
-        if (state == GameState.PLAYING) {
+        if (!session.observer && state == GameState.PLAYING) {
             state = GameState.PAUSED;
             for (PlayerSession s : sessions) s.ready = false;
             broadcast(buildSnapshot());
@@ -215,7 +232,8 @@ public class GameServer {
     synchronized void onDisconnect(PlayerSession session) {
         boolean wasRegistered = sessions.remove(session);
         boolean wasPending = pendingSessions.remove(session);
-        if (!wasRegistered && !wasPending) return;
+        boolean wasObserver = observers.remove(session);
+        if (!wasRegistered && !wasPending && !wasObserver) return;
         session.close();
         if (wasRegistered) {
             System.out.println("Отключился: " + session.name);
@@ -231,6 +249,9 @@ public class GameServer {
 
     void broadcast(Msg msg) {
         for (PlayerSession s : sessions) {
+            s.send(msg);
+        }
+        for (PlayerSession s : observers) {
             s.send(msg);
         }
     }

@@ -16,7 +16,6 @@ import javafx.scene.shape.Line;
 
 import java.io.IOException;
 import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.List;
 
 public class MarksmanController {
@@ -75,13 +74,7 @@ public class MarksmanController {
         String username = tfUsername.getText().trim();
         if (username.isEmpty()) { lblLoginStatus.setText("Введите имя"); return; }
 
-        InetAddress host;
-        try {
-            host = InetAddress.getLocalHost();
-        } catch (UnknownHostException e) {
-            lblLoginStatus.setText("Не удалось определить адрес: " + e.getMessage());
-            return;
-        }
+        InetAddress host = InetAddress.getLoopbackAddress();
 
         try {
             client = new GameClient(host, GameConstants.PORT);

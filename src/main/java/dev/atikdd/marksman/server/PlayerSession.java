@@ -12,6 +12,7 @@ class PlayerSession {
     int shots;
     boolean ready;
     int index;
+    boolean observer;
 
     double playerY = 167;
 

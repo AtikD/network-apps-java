@@ -19,9 +19,10 @@ public class Msg {
         return m;
     }
 
-    public static Msg ready()  { return new Msg(TypeMsg.READY); }
-    public static Msg shoot()  { return new Msg(TypeMsg.SHOOT); }
-    public static Msg pause()  { return new Msg(TypeMsg.PAUSE); }
+    public static Msg ready()   { return new Msg(TypeMsg.READY); }
+    public static Msg shoot()   { return new Msg(TypeMsg.SHOOT); }
+    public static Msg pause()   { return new Msg(TypeMsg.PAUSE); }
+    public static Msg observe() { return new Msg(TypeMsg.OBSERVE); }
 
     public static Msg snapshot(GameSnapshot snapshot) {
         Msg m = new Msg(TypeMsg.SNAPSHOT);
